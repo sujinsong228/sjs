@@ -1,63 +1,57 @@
-# 智能销售数据分析助手（RAG + Multi-Agent）
+# 企业经营分析 Agent（RAG + Multi-Agent）
 
-一个端到端的混合数据分析系统：
-- **非结构化数据**：PDF 文档通过 `LangChain + Milvus` 进行向量化检索。
-- **结构化数据**：`PostgreSQL` 销售数据通过 `NL2SQL` 自动查询。
-- **多 Agent 协作**：分析 Agent + 报告 Agent，自动完成查询、分析、汇报。
-- **前端与部署**：`Streamlit` 交互式界面，`Docker Compose` 一键启动。
+一个可直接运行的端到端 Agent Demo（默认离线、无 API Key）：
+- **结构化分析**：本地 SQLite 销售数据 + NL2SQL。
+- **非结构化检索**：本地 PDF/TXT/MD 文档检索。
+- **多 Agent 流程**：Analyst 生成分析，Reporter 生成报告。
+- **前端展示**：Streamlit 页面直接查看 SQL、证据、结论、报告。
 
-## 架构概览
+## 1. 一键本地运行（推荐）
 
-```text
-用户问题
-  │
-  ├── Agentic Router（意图判断）
-  │     ├── SQL Tool（NL2SQL -> PostgreSQL）
-  │     └── PDF RAG Tool（Embedding -> Milvus）
-  │
-  ├── Analyst Agent（融合结构化结果 + 文档证据）
-  └── Report Agent（生成业务报告）
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app/ui/streamlit_app.py
 ```
 
-## 目录结构
+打开浏览器访问：
+- http://localhost:8501
 
-```text
-app/
-  agents/workflow.py      # 多Agent与Agentic RAG编排
-  tools/nl2sql.py         # NL2SQL + SQL执行
-  tools/pdf_rag.py        # PDF索引与向量检索
-  ui/streamlit_app.py     # 前端交互
-  core/config.py          # 环境配置
-data/
-  init.sql                # PostgreSQL 初始化样例数据
-```
+> 首次运行会自动初始化 `data/sales.db`（无需手动建库）。
 
-## 快速启动
-
-1. 复制环境变量
+## 2. 环境变量（可选）
 
 ```bash
 cp .env.example .env
-# 填写 OPENAI_API_KEY
 ```
 
-2. 一键启动
+常用配置：
 
-```bash
-docker compose up --build
+```env
+DATABASE_URI=sqlite:///./data/sales.db
+DOCS_DIR=./data/docs
+USE_OPENAI_API=false
 ```
 
-3. 打开前端
-
-- http://localhost:8501
-
-## 示例问题
+## 3. 示例问题
 
 - 查询上季度销售额
 - 分析促销策略执行效果，并给出改进建议
 - 对比促销和非促销订单的收入与折扣情况
 
-## 说明
+## 4. 代码结构
 
-- 当前仓库中 `VannaSQLTool` 提供了可运行的 NL2SQL 基线逻辑（规则+SQL执行），便于演示端到端链路。
-- 生产场景可将 `generate_sql` 替换为 Vanna 的训练/推理流程，与企业 schema 与历史问答结合以提升 SQL 准确率。
+```text
+app/
+  agents/workflow.py      # 多Agent流程（离线分析 + 报告生成）
+  tools/nl2sql.py         # NL2SQL + SQLite 自动初始化
+  tools/pdf_rag.py        # 本地文档切片与关键词检索
+  ui/streamlit_app.py     # Streamlit 前端
+  core/config.py          # 环境配置
+```
+
+## 5. 说明
+
+- 当前版本默认离线运行，适合面试演示和本地开发。
+- 如果你想切回在线 API 模式，可设置 `USE_OPENAI_API=true` 并补充对应模型调用逻辑。
