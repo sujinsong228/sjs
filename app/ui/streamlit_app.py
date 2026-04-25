@@ -2,18 +2,24 @@ import pandas as pd
 import streamlit as st
 
 from app.agents.workflow import AgenticRAGSystem
+from app.core.config import settings
 from app.tools.pdf_rag import PDFKnowledgeBase
 
 
 st.set_page_config(page_title="智能销售数据分析助手", page_icon="📈", layout="wide")
 st.title("📈 智能销售数据分析助手（RAG + Multi-Agent）")
-st.caption("支持 PDF 文档 + PostgreSQL 数据库混合检索与自动报告生成")
+st.caption("支持离线模式（无需 API Key）：PDF/TXT/MD 文档 + PostgreSQL 数据混合检索与自动报告")
+
+if settings.use_openai_api:
+    st.info("当前模式：API 模式（USE_OPENAI_API=true）")
+else:
+    st.success("当前模式：离线无 API 模式（USE_OPENAI_API=false）")
 
 system = AgenticRAGSystem()
 
 with st.sidebar:
     st.header("知识库")
-    if st.button("导入 PDF 到 Milvus"):
+    if st.button("导入文档（PDF/TXT/MD）"):
         count = PDFKnowledgeBase().ingest_pdfs()
         st.success(f"已导入 {count} 个文档切片")
 
@@ -26,6 +32,9 @@ question = st.text_area(
 if st.button("开始分析", type="primary"):
     with st.spinner("多Agent协作中..."):
         result = system.run(question)
+
+    st.subheader("运行模式")
+    st.code(result["mode"])
 
     st.subheader("NL2SQL")
     st.code(result["sql"], language="sql")
